@@ -25,6 +25,12 @@ class _MyAppState extends State<MyApp> {
   List<String> selectList = [];
 
   @override
+  void initState() {
+    MediaSelector.color('#086839');
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(

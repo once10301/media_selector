@@ -19,6 +19,10 @@ class MediaSelector {
 
   static const List<String> list = [];
 
+  static void color(String color) {
+    channel.invokeMethod('color', {'color': color});
+  }
+
   static Future<List<Media>> select({PictureMimeType type: PictureMimeType.ofAll, int max: 1, int spanCount: 4, isCamera: true, bool enableCrop: false, bool compress: false, int ratioX: 1, int ratioY: 1, List<String> selectList: list}) async {
     int mimeType = 0;
     if (type == PictureMimeType.ofAll) {

@@ -24,7 +24,9 @@ public class MediaSelectorPlugin implements MethodCallHandler {
 
     @Override
     public void onMethodCall(MethodCall call, Result result) {
-        if (call.method.equals("select")) {
+        if (call.method.equals("color")) {
+            delegate.color(call);
+        } else if (call.method.equals("select")) {
             delegate.select(call, result);
         } else if (call.method.equals("preview_picture")) {
             List<String> selectList = call.argument("selectList");

@@ -2,12 +2,15 @@ package com.ly.media_selector;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 
 import com.luck.picture.lib.PictureSelectionModel;
 import com.luck.picture.lib.PictureSelector;
 import com.luck.picture.lib.config.PictureConfig;
 import com.luck.picture.lib.config.PictureMimeType;
 import com.luck.picture.lib.entity.LocalMedia;
+import com.luck.picture.lib.style.PictureParameterStyle;
 import com.luck.picture.lib.tools.PictureFileUtils;
 
 import java.util.ArrayList;
@@ -23,10 +26,15 @@ import io.flutter.plugin.common.PluginRegistry;
 public class MediaSelectorDelegate implements PluginRegistry.ActivityResultListener {
     private Activity activity;
     private MethodChannel.Result result;
-    boolean enableCrop, compress;
+    private boolean enableCrop, compress;
+    private String color;
 
     MediaSelectorDelegate(Activity activity) {
         this.activity = activity;
+    }
+
+    public void color(MethodCall call) {
+        color = call.argument("color");
     }
 
     public void select(MethodCall call, MethodChannel.Result result) {
@@ -60,10 +68,35 @@ public class MediaSelectorDelegate implements PluginRegistry.ActivityResultListe
                 .enableCrop(enableCrop)// 是否裁剪 true or false
                 .compress(compress)// 是否压缩 true or false
                 .selectionMedia(list);// 是否传入已选图片 List<LocalMedia> list
+        if (color != null) {
+            model.setPictureStyle(getStyle());// 动态自定义相册主题
+        }
         if (enableCrop) {
             model.withAspectRatio(ratioX, ratioY);// int 裁剪比例 如16:9 3:2 3:4 1:1 可自定义
         }
         model.forResult(PictureConfig.CHOOSE_REQUEST);//结果回调onActivityResult code
+    }
+
+    private PictureParameterStyle getStyle() {
+        // 相册主题
+        PictureParameterStyle style = new PictureParameterStyle();
+        // 相册状态栏背景色
+        style.pictureStatusBarColor = Color.parseColor(color);
+        // 相册列表标题栏背景色
+        style.pictureTitleBarBackgroundColor = Color.parseColor(color);
+        // 相册列表底部背景色
+        style.pictureBottomBgColor = Color.parseColor("#FAFAFA");
+        // 已选数量圆点背景样式
+        GradientDrawable drawable = (GradientDrawable) activity.getResources().getDrawable(R.drawable.picture_num);
+        drawable.setColor(Color.parseColor(color));
+        style.pictureCheckNumBgStyle = R.drawable.picture_num;
+        // 相册列表底下预览文字色值(预览按钮可点击时的色值)
+        style.picturePreviewTextColor = Color.parseColor("#333333");
+        // 相册列表已完成色值(已完成 可点击色值)
+        style.pictureCompleteTextColor = Color.parseColor(color);
+        // 预览界面底部背景色
+        style.picturePreviewBottomBgColor = Color.parseColor("#FAFAFA");
+        return style;
     }
 
     @Override
@@ -90,15 +123,23 @@ public class MediaSelectorDelegate implements PluginRegistry.ActivityResultListe
             localMedia.setPath(selectList.get(i));
             list.add(localMedia);
         }
-        PictureSelector.create(activity)
-                .themeStyle(R.style.picture_default_style)
-                .isNotPreviewDownload(true)
-                .loadImageEngine(GlideEngine.createGlideEngine())
-                .openExternalPreview(position, list);
+        PictureSelectionModel model;
+        if (color != null) {
+            model = PictureSelector.create(activity).themeStyle(R.style.picture_default_style);
+        } else {
+            model = PictureSelector.create(activity).setPictureStyle(getStyle());
+        }
+        model.isNotPreviewDownload(true).loadImageEngine(GlideEngine.createGlideEngine()).openExternalPreview(position, list);
     }
 
     public void previewVideo(String path) {
-        PictureSelector.create(activity).externalPictureVideo(path);
+        PictureSelectionModel model;
+        if (color != null) {
+            model = PictureSelector.create(activity).themeStyle(R.style.picture_default_style);
+        } else {
+            model = PictureSelector.create(activity).setPictureStyle(getStyle());
+        }
+        model.externalPictureVideo(path);
     }
 
     public void clearCache() {
