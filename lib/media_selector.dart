@@ -23,7 +23,7 @@ class MediaSelector {
     channel.invokeMethod('color', {'color': color});
   }
 
-  static Future<List<Media>> select({PictureMimeType type: PictureMimeType.ofAll, int max: 1, int spanCount: 4, isCamera: true, bool enableCrop: false, bool compress: false, int ratioX: 1, int ratioY: 1, List<String> selectList: list}) async {
+  static Future<List<Media>> select({PictureMimeType type: PictureMimeType.ofAll, int max: 1, int spanCount: 4, isCamera: true, bool enableCrop: false, bool circleCrop: false, bool compress: true, int ratioX: 1, int ratioY: 1, List<String> selectList: list}) async {
     int mimeType = 0;
     if (type == PictureMimeType.ofAll) {
       mimeType = 0;
@@ -38,6 +38,7 @@ class MediaSelector {
       'spanCount': spanCount,
       'isCamera': isCamera,
       'enableCrop': enableCrop,
+      'circleCrop': circleCrop,
       'compress': compress,
       'ratioX': ratioX,
       'ratioY': ratioY,

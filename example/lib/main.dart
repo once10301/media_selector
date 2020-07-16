@@ -26,7 +26,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
-    MediaSelector.color('#086839');
+    MediaSelector.color('#449897');
     super.initState();
   }
 

@@ -4,12 +4,17 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.provider.CalendarContract;
+import android.util.Log;
+
+import androidx.core.content.ContextCompat;
 
 import com.luck.picture.lib.PictureSelectionModel;
 import com.luck.picture.lib.PictureSelector;
 import com.luck.picture.lib.config.PictureConfig;
 import com.luck.picture.lib.config.PictureMimeType;
 import com.luck.picture.lib.entity.LocalMedia;
+import com.luck.picture.lib.style.PictureCropParameterStyle;
 import com.luck.picture.lib.style.PictureParameterStyle;
 import com.luck.picture.lib.tools.PictureFileUtils;
 
@@ -26,7 +31,6 @@ import io.flutter.plugin.common.PluginRegistry;
 public class MediaSelectorDelegate implements PluginRegistry.ActivityResultListener {
     private Activity activity;
     private MethodChannel.Result result;
-    private boolean enableCrop, compress;
     private String color;
 
     MediaSelectorDelegate(Activity activity) {
@@ -43,8 +47,9 @@ public class MediaSelectorDelegate implements PluginRegistry.ActivityResultListe
         int max = call.argument("max");
         int spanCount = call.argument("spanCount");
         boolean isCamera = call.argument("isCamera");
-        enableCrop = call.argument("enableCrop");
-        compress = call.argument("compress");
+        boolean enableCrop = call.argument("enableCrop");
+        boolean circleCrop = call.argument("circleCrop");
+        boolean compress = call.argument("compress");
         int ratioX = call.argument("ratioX");
         int ratioY = call.argument("ratioY");
         List<String> selectList = call.argument("selectList");
@@ -54,7 +59,6 @@ public class MediaSelectorDelegate implements PluginRegistry.ActivityResultListe
             localMedia.setPath(selectList.get(i));
             list.add(localMedia);
         }
-        this.result = result;
         PictureSelectionModel model = PictureSelector.create(activity)
                 .openGallery(type)//全部.PictureMimeType.ofAll()、图片.ofImage()、视频.ofVideo()、音频.ofAudio()
                 .loadImageEngine(GlideEngine.createGlideEngine())// 外部传入图片加载引擎，必传项
@@ -68,11 +72,20 @@ public class MediaSelectorDelegate implements PluginRegistry.ActivityResultListe
                 .enableCrop(enableCrop)// 是否裁剪 true or false
                 .compress(compress)// 是否压缩 true or false
                 .selectionMedia(list);// 是否传入已选图片 List<LocalMedia> list
-        if (color != null) {
-            model.setPictureStyle(getStyle());// 动态自定义相册主题
-        }
         if (enableCrop) {
             model.withAspectRatio(ratioX, ratioY);// int 裁剪比例 如16:9 3:2 3:4 1:1 可自定义
+        }
+        if (circleCrop) {
+            model.circleDimmedLayer(true)// 是否开启圆形裁剪
+                    .showCropFrame(false)// 是否显示裁剪矩形边框 圆形裁剪时建议设为false
+                    .showCropGrid(false)//是否显示裁剪矩形网格 圆形裁剪时建议设为false
+                    .scaleEnabled(true)//裁剪是否可放大缩小图片
+                    .isDragFrame(true);//是否可拖动裁剪框(固定)
+        }
+        if (color != null) {
+            PictureParameterStyle style = getStyle();
+            model.setPictureStyle(style);// 动态自定义相册主题
+            model.setPictureCropStyle(getCropStyle(style));// 动态自定义裁剪主题
         }
         model.forResult(PictureConfig.CHOOSE_REQUEST);//结果回调onActivityResult code
     }
@@ -99,9 +112,17 @@ public class MediaSelectorDelegate implements PluginRegistry.ActivityResultListe
         return style;
     }
 
+    private PictureCropParameterStyle getCropStyle(PictureParameterStyle style) {
+        return new PictureCropParameterStyle(
+                Color.parseColor(color),
+                Color.parseColor(color),
+                Color.WHITE,
+                style.isChangeStatusBarFontColor);
+    }
+
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == Activity.RESULT_OK && requestCode == PictureConfig.CHOOSE_REQUEST && data != null) {
+        if (resultCode == Activity.RESULT_OK && requestCode == PictureConfig.CHOOSE_REQUEST && data != null && result != null) {
             List<LocalMedia> selectList = PictureSelector.obtainMultipleResult(data);
             final List<Map<String, String>> list = new ArrayList<>();
             for (int i = 0; i < selectList.size(); i++) {
